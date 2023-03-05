@@ -3,6 +3,7 @@ import "./App.css";
 import { EditorContainer } from "./components/EditorContainer";
 const layerData = [
   {
+    id: 1,
     type: "rect",
     x: 10,
     y: 10,
@@ -18,8 +19,17 @@ function App() {
     height: 0,
   });
 
-  // We cant set the h & w on Stage to 100% it only takes px values so we have to
-  // find the parent container's w and h and then manually set those !
+  const [rectangles, setRectangles] = useState(layerData);
+  const [selectedId, selectShape] = useState(null);
+
+  const checkDeselect = (e) => {
+    // deselect when clicked on empty area
+    const clickedOnEmpty = e.target === e.target.getStage();
+    if (clickedOnEmpty) {
+      selectShape(null);
+    }
+  };
+
   useEffect(() => {
     if (divRef.current?.offsetHeight && divRef.current?.offsetWidth) {
       setDimensions({
@@ -28,6 +38,7 @@ function App() {
       });
     }
   }, []);
+
   return (
     <div className="container m-5">
       <div className="flex flex-row">
@@ -38,9 +49,13 @@ function App() {
           ref={divRef}
         >
           <EditorContainer
+            checkDeselect={checkDeselect}
             stageHeight={dimensions.height}
             stageWidth={dimensions.width}
-            layers={layerData}
+            rectangles={rectangles}
+            setRectangles={setRectangles}
+            selectedId={selectedId}
+            selectShape={selectShape}
           />
         </div>
         <div id="toolbar" className="p-2" style={{ width: "20%" }}>
