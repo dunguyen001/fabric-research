@@ -11,6 +11,15 @@ const layerData = [
     width: 30,
     height: 30,
   },
+  {
+    id: 2,
+    type: "rect",
+    x: 10,
+    y: 50,
+    fill: "blue",
+    width: 30,
+    height: 30,
+  },
 ];
 function App() {
   const divRef = useRef(null);
@@ -30,15 +39,25 @@ function App() {
     }
   };
 
-  useEffect(() => {
+  const onResize = (e) => {
+    console.log(divRef.current)
     if (divRef.current?.offsetHeight && divRef.current?.offsetWidth) {
       setDimensions({
         width: divRef.current.offsetWidth,
         height: divRef.current.offsetHeight,
       });
     }
+  }
+
+  useEffect(() => {
+    window.addEventListener("resize", onResize);
+    // onResize();
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
+  console.log("dimensions", dimensions)
   return (
     <div className="container m-5">
       <div className="flex flex-row">
