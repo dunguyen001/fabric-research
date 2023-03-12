@@ -1,6 +1,8 @@
 import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
-import { TEMPLATE_1, TEMPLATE_2 } from "./const/template";
+import { CUSTOMDATA } from "./const/customization";
+import { TEMPLATE_2 } from "./const/template";
+import { mappingCustomizationData } from "./utils/customization";
 import { loadImageFromUrl } from "./utils/util";
 
 const DEMO_TEMPLATE = TEMPLATE_2;
@@ -46,11 +48,9 @@ function App() {
     });
     canvas.setZoom(scaleRatio);
 
-    const { imagePlaceHoldersEps } = eps;
-    loadEPSImages(imagePlaceHoldersEps).then((imageObjects) => {
-      setObjects(objects.concat(...imageObjects));
-    });
-    loadEPSImages(imagePlaceHoldersEps).then((imageObjects) => {
+    const epsData = mappingCustomizationData(TEMPLATE_2, CUSTOMDATA);
+
+    loadEPSImages(epsData.filter(v => v.type === 'image')).then((imageObjects) => {
       setObjects(objects.concat(...imageObjects));
     });
     window._canvas = canvas
@@ -74,12 +74,21 @@ function App() {
   const loadEPSImages = async (epsImages = []) => {
     const imageObjects = await Promise.all(
       epsImages.map(async (imageObj) => {
-        // test mode
-        if (!imageMapping[imageObj.id]) return;
 
-        const base64 = await loadImage(
-          `${baseUrl}${imageMapping[imageObj.id]}`
-        );
+        console.log(imageObj.imageLibraryId)
+        let base64;
+        if (imageObj.imageLibraryId) {
+          const positionObject = await fetch(`https://app.customily.com/api/Libraries/${imageObj.imageLibraryId}/Elements/Position/${imageObj.customData.position}`)
+            .then(v => v.json());
+            base64 = await loadImage(
+              `${baseUrl}${positionObject.Path.replace('/Content', '')}?r=0`
+            );
+        } else {
+          base64 = await loadImage(
+            `${baseUrl}${imageObj.currentImagePath.replace('/Content', '')}?r=0`
+          );
+        }
+       
 
         const object = await new Promise((resolve, reject) => {
           new fabric.Image.fromURL(base64, (img) => {
@@ -119,6 +128,8 @@ function App() {
 
   const download = () => {
     const a = document.createElement("a");
+    window._canvas.setWidth(4050)
+    window._canvas.setHeight(4650)
     var svgBlob = new Blob([window._canvas.toSVG()], {
       type: "image/svg+xml;charset=utf-8",
     });
@@ -149,7 +160,7 @@ function App() {
           <div
             ref={canvasContainerRef}
             style={{ height: 800, width: 800 }}
-            className="border boder-1 w-auto"
+            className="border boder-1 w-auto flex justify-center py-3"
           >
             <canvas id="canvas-container"></canvas>
           </div>
