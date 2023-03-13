@@ -1,12 +1,12 @@
 export const mappingCustomizationData = (template, customization) => {
-    const { imagesParameters } = customization.CustomizationData;
-    const { imagePlaceHoldersEps } = template.eps;
+    const { imagesParameters, texts } = JSON.parse(customization.CustomizationData) ;
+    const { imagePlaceHoldersEps, textsEps } = template.eps;
     
     const mappedData = []
     for (let cImage of imagesParameters) {
-        const imageEps = imagePlaceHoldersEps.find(v => v.id === cImage.id);
+        const imageEps = imagePlaceHoldersEps.find(v => v.id === cImage.id && v.uuid === cImage.uuid);
         if (!imageEps) {
-            console.log("Missing ", cImage.uuid);
+            console.log("Missing image", cImage.uuid);
             continue;
         };
 
@@ -14,10 +14,25 @@ export const mappingCustomizationData = (template, customization) => {
 
         mappedData.push({
             ...imageEps,
-            type: "image",
+            customType: "image",
             currentImagePath: dynamicImagesPath.get(cImage.position),
             customData: cImage,
         })
     }
-    return mappedData.sort((a, b) => a.zIndex - b.zIndex);
+
+    for (let cText of texts) {
+        const textEps = textsEps.find(v => v.id === cText.id && v.uuid === cText.uuid);
+        if (!textEps) {
+            console.log("Missing text ", cText.uuid);
+            continue;
+        };
+        const dynamicFontsPath = new Map(JSON.parse(textEps.fontsMap))
+        mappedData.push({
+            ...textEps,
+            currentFontPath: dynamicFontsPath.get(cText.fontId),
+            customType: "text",
+            customData: cText,
+        })
+    }
+    return mappedData.sort((a, b) => b.zIndex - a.zIndex);
 }

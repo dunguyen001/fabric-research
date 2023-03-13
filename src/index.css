@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* @font-face {
+    font-family: 'demo1';
+    src: url('https://cdn.customily.com/fonts/uniecombest/powerstation-wedge-low-473220ee-94ce-47cb-901b-1401eeffc288.ttf');
+} */
