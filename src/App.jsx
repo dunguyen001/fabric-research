@@ -2,7 +2,10 @@ import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
 import { CUSTOMDATA } from "./const/customization";
 import { TEMPLATE_2 } from "./const/template";
-import { mappingCustomizationData } from "./utils/customization";
+import {
+  mappingCustomizationData,
+  mappingCustomizationDataPreview,
+} from "./utils/customization";
 import { loadImageFromUrl } from "./utils/util";
 
 const DEMO_TEMPLATE = TEMPLATE_2;
@@ -18,33 +21,40 @@ const baseUrl = "https://cdn.customily.com";
 
 function App() {
   const canvasContainerRef = useRef(null);
-
+  const [canvasContainer, setCanvasContainer] = useState([600, 600])
   const [objects, setObjects] = useState([]);
 
   useEffect(() => {
-    const { eps } = TEMPLATE_2;
+    const { eps, preview } = TEMPLATE_2;
 
-    const containerWidth = canvasContainerRef.current?.offsetWidth || 500;
+    const containerWidth = canvasContainer[0];
     const canvasWidth = eps.width;
-    const containerHeight = canvasContainerRef.current?.offsetHeight || 500;
+    const containerHeight = canvasContainer[1];
     const canvasHeight = eps.height;
     const scaleRatio = Math.min(
       containerWidth / canvasWidth,
       containerHeight / canvasHeight
     );
+
+    
     const canvas = new fabric.Canvas("canvas-container", {
       width: canvasWidth,
       height: canvasHeight,
       enableRetinaScaling: true,
+      preserveObjectStacking: true,
+      fireRightClick: true,
+      svgViewportTransformation: true
     });
 
-    canvas.enableRetinaScaling = true;
-    canvas.setHeight(canvasHeight);
-    canvas.setWidth(canvasWidth);
-    canvas.setDimensions({
+    
+    const dimensions = {
       width: canvas.getWidth() * scaleRatio,
       height: canvas.getHeight() * scaleRatio,
-    });
+    }
+    setCanvasContainer([dimensions.width, dimensions.height])
+    canvas.setDimensions(dimensions);
+
+    
     canvas.setZoom(scaleRatio);
 
     const epsData = mappingCustomizationData(TEMPLATE_2, CUSTOMDATA);
@@ -132,7 +142,7 @@ function App() {
                 `${baseUrl}${epsObj.currentFontPath.replace("/Content", "")}`
               );
             }
-            
+
             await loadFonts("demo1", `url('${base64}')`);
             fabric.fontPaths["demo1"] = base64;
 
@@ -145,8 +155,17 @@ function App() {
             text.set("strokeWidth", 1);
             text.set("fontWeight", "bold");
             text.set("fontFamily", "demo1");
-            // text.set("fontStyle", "regular");
-            console.log(text.toSVG());
+            console.log({
+              ...epsObj,
+              width: epsObj.width,
+              height: epsObj.height,
+              top: epsObj.centerY,
+              left: epsObj.centerX,
+              originX: "center",
+              originY: "center",
+              id: epsObj.id,
+              uuid: epsObj.uuid,
+            });
             const group = new fabric.Group([text], {
               ...epsObj,
               width: epsObj.width,
@@ -205,17 +224,19 @@ function App() {
         window._canvas.add(object);
       });
   }, [objects]);
-  // console.log(objects[0]);
+  console.log(canvasContainer);
   return (
     <div className="container mx-auto bg-red">
       <div className="py-5 px-5">
         <div className="flex">
-          <div
-            ref={canvasContainerRef}
-            style={{ height: 800, width: 800 }}
-            className="border boder-1 w-auto flex justify-center py-3"
-          >
-            <canvas id="canvas-container"></canvas>
+          <div id="artboard" className="p-3 flex justify-center items-center"  style={{ height: 800, width: 800, backgroundColor: "#d6d3d1" }}>
+            <div
+              ref={canvasContainerRef}
+              style={{ height: canvasContainer[1], width: canvasContainer[0], backgroundColor: "#ffffff" }}
+              className="border boder-1 w-auto flex justify-center"
+            >
+              <canvas id="canvas-container"></canvas>
+            </div>
           </div>
           <div>
             <button onClick={() => download()}>Export svg</button>
