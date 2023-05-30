@@ -56,7 +56,6 @@ function App() {
 
     
     canvas.setZoom(scaleRatio);
-
     const epsData = mappingCustomizationData(TEMPLATE_2, CUSTOMDATA);
 
     loadEPSData(epsData).then((imageObjects) => {
@@ -91,25 +90,23 @@ function App() {
                 `https://app.customily.com/api/Libraries/${epsObj.imageLibraryId}/Elements/Position/${epsObj.customData.position}`
               ).then((v) => v.json());
               base64 = await loadImage(
-                `${baseUrl}${positionObject.Path.replace("/Content", "")}?r=0`
+                `${baseUrl}${positionObject.Path.replace("/Content", "")}`
               );
             } else {
               base64 = await loadImage(
                 `${baseUrl}${epsObj.currentImagePath.replace(
                   "/Content",
                   ""
-                )}?r=0`
+                )}`
               );
             }
 
             const object = await new Promise((resolve, reject) => {
               new fabric.Image.fromURL(base64, (img) => {
-                // img.set('top', 0);
-                // img.set('left', 0);
                 img.set("originX", "center");
                 img.set("originY", "center");
-                img.scaleToHeight(Math.min(epsObj.height, epsObj.width));
-                img.scaleToWidth(Math.min(epsObj.height, epsObj.width));
+                img.scaleToWidth(Math.min(epsObj.width, epsObj.height));
+                img.scaleToHeight(Math.min(epsObj.width, epsObj.height));
                 const group = new fabric.Group([img], {
                   ...epsObj,
                   width: epsObj.width,
@@ -147,25 +144,16 @@ function App() {
             fabric.fontPaths["demo1"] = base64;
 
             const text = new fabric.IText(epsObj.customData.textValue);
-            epsObj.fontSize = (epsObj.maxSizePx / epsObj.minSizePx) * 2;
+            // epsObj.fontSize = (epsObj.maxSizePx / epsObj.minSizePx) * 2;
             text.set("originX", "center");
             text.set("originY", "center");
-            text.set("fontSize", epsObj.fontSize || 200);
+            // text.set("fontSize", epsObj.fontSize || 200);
             text.set("backgroundColor", "rgba(0,0,0,0)");
             text.set("strokeWidth", 1);
-            text.set("fontWeight", "bold");
+            // text.set("fontWeight", "bold");
             text.set("fontFamily", "demo1");
-            console.log({
-              ...epsObj,
-              width: epsObj.width,
-              height: epsObj.height,
-              top: epsObj.centerY,
-              left: epsObj.centerX,
-              originX: "center",
-              originY: "center",
-              id: epsObj.id,
-              uuid: epsObj.uuid,
-            });
+            text.scaleToWidth(epsObj.width)
+            text.scaleToHeight(epsObj.height)
             const group = new fabric.Group([text], {
               ...epsObj,
               width: epsObj.width,
