@@ -27,11 +27,13 @@ export const mappingCustomizationData = (template, customization) => {
             continue;
         };
         const dynamicFontsPath = new Map(JSON.parse(textEps.fontsMap))
+        const textColor = JSON.parse(textEps.color).hex
         mappedData.push({
             ...textEps,
             currentFontPath: dynamicFontsPath.get(cText.fontId),
             customType: "text",
             customData: cText,
+            textColor,
         })
     }
     return mappedData.sort((a, b) => b.zIndex - a.zIndex);
@@ -66,11 +68,13 @@ export const mappingCustomizationDataPreview = (template, customization) => {
             continue;
         };
         const dynamicFontsPath = new Map(JSON.parse(textPreview.fontsMap))
+        const textColor = JSON.parse(textPreview.color).hex
         mappedData.push({
             ...textPreview,
             currentFontPath: dynamicFontsPath.get(cText.fontId),
             customType: "text",
             customData: cText,
+            textColor,
         })
     }
     return mappedData.sort((a, b) => b.zIndex - a.zIndex);

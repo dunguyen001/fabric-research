@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { useEffect, useRef, useState } from "react";
-import { CUSTOMDATA } from "./const/customization";
-import { TEMPLATE_2 } from "./const/template";
+import { CUSTOMDATA, CUSTOMDATA2 } from "./const/customization";
+import { MOCKUP_1, TEMPLATE_2 } from "./const/template";
 import {
   mappingCustomizationData,
   mappingCustomizationDataPreview,
@@ -21,7 +21,7 @@ const baseUrl = "https://cdn.customily.com";
 
 function App() {
   const canvasContainerRef = useRef(null);
-  const [canvasContainer, setCanvasContainer] = useState([600, 600])
+  const [canvasContainer, setCanvasContainer] = useState([600, 600]);
   const [objects, setObjects] = useState([]);
 
   useEffect(() => {
@@ -36,31 +36,31 @@ function App() {
       containerHeight / canvasHeight
     );
 
-    
     const canvas = new fabric.Canvas("canvas-container", {
       width: canvasWidth,
       height: canvasHeight,
       enableRetinaScaling: true,
       preserveObjectStacking: true,
       fireRightClick: true,
-      svgViewportTransformation: true
+      svgViewportTransformation: true,
     });
 
-    
     const dimensions = {
       width: canvas.getWidth() * scaleRatio,
       height: canvas.getHeight() * scaleRatio,
-    }
-    setCanvasContainer([dimensions.width, dimensions.height])
+    };
+    setCanvasContainer([dimensions.width, dimensions.height]);
     canvas.setDimensions(dimensions);
 
-    
     canvas.setZoom(scaleRatio);
     const epsData = mappingCustomizationData(TEMPLATE_2, CUSTOMDATA);
-
     loadEPSData(epsData).then((imageObjects) => {
       setObjects(objects.concat(...imageObjects));
     });
+    // const data = mappingCustomizationDataPreview(MOCKUP_1, CUSTOMDATA2);
+    // loadPreviewData(data).then((imageObjects) => {
+    //   setObjects(objects.concat(...imageObjects));
+    // });
     window._canvas = canvas;
     return () => {
       canvas.dispose();
@@ -94,10 +94,7 @@ function App() {
               );
             } else {
               base64 = await loadImage(
-                `${baseUrl}${epsObj.currentImagePath.replace(
-                  "/Content",
-                  ""
-                )}`
+                `${baseUrl}${epsObj.currentImagePath.replace("/Content", "")}`
               );
             }
 
@@ -145,15 +142,34 @@ function App() {
 
             const text = new fabric.IText(epsObj.customData.textValue);
             // epsObj.fontSize = (epsObj.maxSizePx / epsObj.minSizePx) * 2;
+            // const p = epsObj.maxSizePx / 200
+            // console.log(epsObj.maxSizePx / 200)
+            // const fontSize = p * 200;
+            text.set("fontSize", 200);
             text.set("originX", "center");
             text.set("originY", "center");
-            // text.set("fontSize", epsObj.fontSize || 200);
             text.set("backgroundColor", "rgba(0,0,0,0)");
             text.set("strokeWidth", 1);
-            // text.set("fontWeight", "bold");
+            text.set("fontWeight", "bold");
             text.set("fontFamily", "demo1");
-            text.scaleToWidth(epsObj.width)
-            text.scaleToHeight(epsObj.height)
+            text.set("fill", epsObj.textColor);
+            console.log(text.width)
+            const d = epsObj.maxSizePx / text.width
+            const u = epsObj.minSizePx / text.height;
+            let p = Math.min(d, u)
+            let h = p * 200;
+            if (h > epsObj.maxSizePx) {
+              h = epsObj.maxSizePx
+            }
+
+            if (h < epsObj.minSizePx) {
+              p = epsObj.maxSizePx / 200
+              console.log(p)
+              h = p * 200
+            }
+            text.set("fontSize", h);
+            text.scaleToWidth(epsObj.width);
+            text.scaleToHeight(epsObj.height);
             const group = new fabric.Group([text], {
               ...epsObj,
               width: epsObj.width,
@@ -171,6 +187,118 @@ function App() {
 
           default: {
             console.log("Unknown object ", epsObj);
+            break;
+          }
+        }
+      })
+    );
+
+    return fabricbjects.filter((v) => v);
+  };
+
+  const loadPreviewData = async (previewData = []) => {
+    const fabricbjects = await Promise.all(
+      previewData.map(async (object) => {
+        switch (object.customType) {
+          case "image": {
+            let base64;
+            if (object.imageLibraryId) {
+              console.log(
+                `https://app.customily.com/api/Libraries/${object.imageLibraryId}/Elements/Position/${object.customData.position}`
+              );
+              const positionObject = await fetch(
+                `https://app.customily.com/api/Libraries/${object.imageLibraryId}/Elements/Position/${object.customData.position}`
+              ).then((v) => v.json());
+
+              if (positionObject) {
+                base64 = await loadImage(
+                  `${baseUrl}${positionObject.Path.replace("/Content", "")}`
+                );
+              } else if (object.currentImagePath) {
+                base64 = await loadImage(
+                  `${baseUrl}${object.currentImagePath.replace("/Content", "")}`
+                );
+              }
+            } else {
+              base64 = await loadImage(
+                `${baseUrl}${object.currentImagePath.replace("/Content", "")}`
+              );
+            }
+
+            const _object = await new Promise((resolve, reject) => {
+              new fabric.Image.fromURL(base64, (img) => {
+                img.set("originX", "center");
+                img.set("originY", "center");
+                img.scaleToWidth(Math.min(object.width, object.height));
+                img.scaleToHeight(Math.min(object.width, object.height));
+                const group = new fabric.Group([img], {
+                  ...object,
+                  width: object.width,
+                  height: object.height,
+                  top: object.centerY,
+                  left: object.centerX,
+                  originX: "center",
+                  originY: "center",
+                  id: object.id,
+                  uuid: object.uuid,
+                });
+                resolve(group);
+              });
+            });
+
+            return _object;
+          }
+
+          case "text": {
+            let base64;
+            if (object.fontLibraryId) {
+              const positionObject = await fetch(
+                `https://app.customily.com/api/Libraries/${object.fontLibraryId}/Elements/Position/${object.customData.position}`
+              ).then((v) => v.json());
+              base64 = await loadImage(
+                `${baseUrl}${positionObject.Path.replace("/Content", "")}`
+              );
+            } else {
+              base64 = await loadImage(
+                `${baseUrl}${object.currentFontPath.replace("/Content", "")}`
+              );
+            }
+
+            await loadFonts("demo1", `url('${base64}')`);
+            fabric.fontPaths["demo1"] = base64;
+
+            const text = new fabric.IText(
+              String(object.customData.textValue).toUpperCase()
+            );
+            const p = object.maxSizePx / 200
+            const fontSize = p * 200;
+            text.set("originX", "center");
+            text.set("originY", "center");
+            text.set("fontSize", fontSize);
+            text.set("backgroundColor", "rgba(0,0,0,0)");
+            text.set("strokeWidth", 1);
+            text.set("fontWeight", "bold");
+            text.set("fontFamily", "demo1");
+            text.set("fill", object.textColor);
+            // text.scaleToWidth(object.width);
+            // text.scaleToHeight(object.height);
+            const group = new fabric.Group([text], {
+              ...object,
+              width: object.width,
+              height: object.height,
+              top: object.centerY,
+              left: object.centerX,
+              originX: "center",
+              originY: "center",
+              id: object.id,
+              uuid: object.uuid,
+            });
+            // text.scaleToHeight(scaleRatio);
+            return group;
+          }
+
+          default: {
+            console.log("Unknown object ", object);
             break;
           }
         }
@@ -217,10 +345,18 @@ function App() {
     <div className="container mx-auto bg-red">
       <div className="py-5 px-5">
         <div className="flex">
-          <div id="artboard" className="p-3 flex justify-center items-center"  style={{ height: 800, width: 800, backgroundColor: "#d6d3d1" }}>
+          <div
+            id="artboard"
+            className="p-3 flex justify-center items-center"
+            style={{ height: 800, width: 800, backgroundColor: "#d6d3d1" }}
+          >
             <div
               ref={canvasContainerRef}
-              style={{ height: canvasContainer[1], width: canvasContainer[0], backgroundColor: "#ffffff" }}
+              style={{
+                height: canvasContainer[1],
+                width: canvasContainer[0],
+                backgroundColor: "#ffffff",
+              }}
               className="border boder-1 w-auto flex justify-center"
             >
               <canvas id="canvas-container"></canvas>
